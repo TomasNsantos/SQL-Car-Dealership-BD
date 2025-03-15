@@ -17,7 +17,7 @@ SELECT NOME,
 FROM CLIENTE;
 
 
--- Junção externa
+-- Junção externa (LEFT JOIN)
 --Retorna o nome de todos os clientes da tabela cliente com os seus codigos de serviços, caso n tenha retorna null na coluna cod_serv
 select nome,cod_serv 
     from cliente c left join contrata c2 on c.cpf = c2.cpf;
@@ -29,6 +29,13 @@ from venda
 group by CPF_FUNC 
 having count(*)>=2;
 
+-- GROUP BY COM ORDER BY
+-- Mostra quantos funcionários estão sob cada chefe
+SELECT CPF_CHEFE, COUNT(*) AS NUM_FUNCIONARIOS
+FROM FUNCIONARIO
+WHERE CPF_CHEFE IS NOT NULL
+GROUP BY CPF_CHEFE
+ORDER BY NUM_FUNCIONARIOS DESC;
 
 -- INNER JOIN
 --Exibe o nome dos clientes que contrataram serviços e número  de serviços contratados por nome
@@ -47,7 +54,7 @@ select nome
 	from cliente C where EXISTS(select * from contrata C2 where C.cpf = C2.cpf)
 
 -- Anti-join
---Exibe os nome dos clientes que não contataram serviços
+--Exibe os nome dos clientes que NÃO contataram serviços
 select nome 
 	from cliente C where NOT EXISTS(select * from contrata C2 where C.cpf = C2.cpf)
 
@@ -65,7 +72,7 @@ select nome
 		where(C.cpf,C.DT_CAD) IN 
     	 (select CPF_CLIENTE, DATA_COMPRA from VENDA order by DATA_COMPRA desc fetch first 1 rows only)
 
--- Operação de conjunto
+-- Operação de conjunto (UNION)
 --Exibe a União dos nomes de clientes e funcionários
 SELECT NOME
 FROM 
@@ -74,3 +81,77 @@ FROM
 UNION 
 	(SELECT NOME
     FROM FUNCIONARIO);
+
+-- 20. Operação de Conjunto (INTERSECT)
+-- Clientes que compraram carros e contrataram serviços
+SELECT CPF_CLIENTE 
+FROM VENDA
+	INTERSECT
+SELECT CPF 
+FROM CONTRATA;
+
+-- 21. Operação de Conjunto (EXCEPT)
+-- Clientes que compraram carros, mas **não** contrataram serviços
+SELECT CPF_CLIENTE 
+FROM VENDA
+	EXCEPT
+SELECT CPF 
+FROM CONTRATA;
+
+-- 12. DELETE com Subquery
+-- Remove todos os clientes que **nunca** compraram um carro
+DELETE FROM CLIENTE
+WHERE CPF NOT IN (SELECT CPF_CLIENTE FROM VENDA);
+
+-- 13. Atualização Condicional (UPDATE com WHERE)
+-- Aumenta o valor de todos os carros do tipo 'TAXI' em 15%
+UPDATE AUTO_PLACA
+SET VALOR = VALOR * 1.15
+WHERE TIPO = 'TAXI';
+
+-- 14. View para Clientes Premium
+-- Clientes que compraram carros com valor acima da média
+CREATE VIEW ClientesPremium AS
+SELECT C.NOME, A.VALOR
+FROM CLIENTE C
+JOIN VENDA V ON C.CPF = V.CPF_CLIENTE
+JOIN AUTO_PLACA A ON V.CHASSI = A.CHASSI
+WHERE A.VALOR > (SELECT AVG(VALOR) FROM AUTO_PLACA);
+
+-- verificando a view criada
+SELECT * FROM ClientesPremium;
+
+-- 17. Trigger para impedir vendas abaixo de 5000
+CREATE OR REPLACE FUNCTION verifica_valor_venda()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (SELECT VALOR FROM AUTO_PLACA WHERE CHASSI = NEW.CHASSI) < 5000 THEN
+        RAISE EXCEPTION 'Venda não permitida para carros com valor abaixo de 5000';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verifica_venda
+BEFORE INSERT ON VENDA
+FOR EACH ROW
+EXECUTE FUNCTION verifica_valor_venda();
+
+-- Teste da Trigger
+INSERT INTO VENDA (CPF_CLIENTE, CPF_FUNC, CHASSI, DATA_COMPRA)
+VALUES ('11122233345', '44455566677', 'ABC123', CURRENT_DATE);
+
+-- 18. Função de Janela
+-- Classifica os funcionários pelo número de vendas
+SELECT CPF_FUNC, COUNT(*) AS TOTAL_VENDAS,
+       RANK() OVER (ORDER BY COUNT(*) DESC) AS RANKING
+FROM VENDA
+GROUP BY CPF_FUNC;
+
+-- 19. Atualização em lote
+UPDATE CLIENTE
+SET CEP = '50000099'
+WHERE RUA = 'B';
+
+--Teste da atualização
+SELECT * FROM CLIENTE		
