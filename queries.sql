@@ -1,11 +1,11 @@
--- SELF JOIN
+-- 1. SELF JOIN
 --Retorna o relacionamento de cada funcionário com o seu chefe(quem é o chefe de cada funcionário)
 SELECT F1.NOME AS FUNCIONARIO, 
        F2.NOME AS CHEFE
 FROM FUNCIONARIO F1
 LEFT JOIN FUNCIONARIO F2 ON F1.CPF_CHEFE = F2.CPF;
 
--- CONSTRUÇÃO CASE
+-- 2. CONSTRUÇÃO CASE
 --Dividir clientes entre novos, regulares e antigos baseando-se na data de cadastro
 SELECT NOME, 
        DT_CAD,
@@ -17,19 +17,19 @@ SELECT NOME,
 FROM CLIENTE;
 
 
--- Junção externa (LEFT JOIN)
+-- 3. Junção Externa (LEFT JOIN)
 --Retorna o nome de todos os clientes da tabela cliente com os seus codigos de serviços, caso n tenha retorna null na coluna cod_serv
 select nome,cod_serv 
     from cliente c left join contrata c2 on c.cpf = c2.cpf;
 
--- Group by com Having
+-- 4. Group by com HAVING
 --Seleciona o cpf dos funcionarios e quantas vezes eles venderam 2 ou mais automoveis 
 select cpf_func,count(*) as VND_REALIZADAS
 from venda 
 group by CPF_FUNC 
 having count(*)>=2;
 
--- GROUP BY COM ORDER BY
+-- 5. GROUP BY COM ORDER BY
 -- Mostra quantos funcionários estão sob cada chefe
 SELECT CPF_CHEFE, COUNT(*) AS NUM_FUNCIONARIOS
 FROM FUNCIONARIO
@@ -37,42 +37,42 @@ WHERE CPF_CHEFE IS NOT NULL
 GROUP BY CPF_CHEFE
 ORDER BY NUM_FUNCIONARIOS DESC;
 
--- INNER JOIN
+-- 6. INNER JOIN
 --Exibe o nome dos clientes que contrataram serviços e número  de serviços contratados por nome
 SELECT C.NOME,COUNT(*) as QTD_SRV_CONT
 FROM CONTRATA C2 JOIN CLIENTE C ON C.CPF = C2.CPF 
 GROUP BY C.NOME;
 
--- Subconsulta Escalar
+-- 7. Subconsulta Escalar
 -- Exibe o chassi e o valor dos carros que forem maior que a media geral dos valores.
 select chassi , valor
     from auto_placa where valor > (select round(avg(valor),2) from auto_placa);
 
--- Semi-join
+-- 8. Semi-join
 --Exibe o nome dos clientes que contataram os serviços sem repetição dos nomes
 select nome 
 	from cliente C where EXISTS(select * from contrata C2 where C.cpf = C2.cpf)
 
--- Anti-join
+-- 9. Anti-join
 --Exibe os nome dos clientes que NÃO contataram serviços
 select nome 
 	from cliente C where NOT EXISTS(select * from contrata C2 where C.cpf = C2.cpf)
 
--- Subconsulta do tipo tabela
+-- 10. Subconsulta do tipo Tabela
 --Exibe clientes que realizaram serviços na mesma data de compra do carro
 select nome
 	from cliente C 
 		where(C.cpf,C.DT_CAD) IN 
     	 (select cpf,DT_ENT from contrata C2)
 
--- Subconsulta do tipo linha
+-- 11. Subconsulta do tipo Linha
 --Exibe o nome do ultimo cliente que comprou o carro na mesma data que fez o cadastro
 select nome
 	from cliente C 
 		where(C.cpf,C.DT_CAD) IN 
     	 (select CPF_CLIENTE, DATA_COMPRA from VENDA order by DATA_COMPRA desc fetch first 1 rows only)
 
--- Operação de conjunto (UNION)
+-- 12. Operação de Conjunto (UNION)
 --Exibe a União dos nomes de clientes e funcionários
 SELECT NOME
 FROM 
@@ -82,7 +82,7 @@ UNION
 	(SELECT NOME
     FROM FUNCIONARIO);
 
--- 20. Operação de Conjunto (INTERSECT)
+-- 13. Operação de Conjunto (INTERSECT)
 -- Clientes que compraram carros e contrataram serviços
 SELECT CPF_CLIENTE 
 FROM VENDA
@@ -90,7 +90,7 @@ FROM VENDA
 SELECT CPF 
 FROM CONTRATA;
 
--- 21. Operação de Conjunto (EXCEPT)
+-- 14. Operação de Conjunto (EXCEPT)
 -- Clientes que compraram carros, mas **não** contrataram serviços
 SELECT CPF_CLIENTE 
 FROM VENDA
@@ -98,18 +98,18 @@ FROM VENDA
 SELECT CPF 
 FROM CONTRATA;
 
--- 12. DELETE com Subquery
+-- 15. DELETE com Subquery
 -- Remove todos os clientes que **nunca** compraram um carro
 DELETE FROM CLIENTE
 WHERE CPF NOT IN (SELECT CPF_CLIENTE FROM VENDA);
 
--- 13. Atualização Condicional (UPDATE com WHERE)
+-- 16. Atualização Condicional (UPDATE com WHERE)
 -- Aumenta o valor de todos os carros do tipo 'TAXI' em 15%
 UPDATE AUTO_PLACA
 SET VALOR = VALOR * 1.15
 WHERE TIPO = 'TAXI';
 
--- 14. View para Clientes Premium
+-- 17. View para Clientes Premium
 -- Clientes que compraram carros com valor acima da média
 CREATE VIEW ClientesPremium AS
 SELECT C.NOME, A.VALOR
@@ -121,7 +121,7 @@ WHERE A.VALOR > (SELECT AVG(VALOR) FROM AUTO_PLACA);
 -- verificando a view criada
 SELECT * FROM ClientesPremium;
 
--- 17. Trigger para impedir vendas abaixo de 5000
+-- 18. Trigger para impedir vendas abaixo de 5000
 CREATE OR REPLACE FUNCTION verifica_valor_venda()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -141,14 +141,15 @@ EXECUTE FUNCTION verifica_valor_venda();
 INSERT INTO VENDA (CPF_CLIENTE, CPF_FUNC, CHASSI, DATA_COMPRA)
 VALUES ('11122233345', '44455566677', 'ABC123', CURRENT_DATE);
 
--- 18. Função de Janela
+-- 19. Função de Janela
 -- Classifica os funcionários pelo número de vendas
 SELECT CPF_FUNC, COUNT(*) AS TOTAL_VENDAS,
        RANK() OVER (ORDER BY COUNT(*) DESC) AS RANKING
 FROM VENDA
 GROUP BY CPF_FUNC;
 
--- 19. Atualização em lote
+-- 20. Atualização em Lote
+-- Altera o CEP de todos os clientes que moram na rua 'B'
 UPDATE CLIENTE
 SET CEP = '50000099'
 WHERE RUA = 'B';
@@ -156,7 +157,7 @@ WHERE RUA = 'B';
 --Teste da atualização
 SELECT * FROM CLIENTE		
 
---INSERÇÕES E TESTES
+--------------------------INSERÇÕES E TESTES------------------------
 
 --INSERE O DONO DA CONCESSIONÁRIA 
 INSERT INTO FUNCIONARIO (CPF, RUA, NUM, CEP, NOME, MAT, CPF_CHEFE)
