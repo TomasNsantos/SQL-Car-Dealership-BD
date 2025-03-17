@@ -178,15 +178,18 @@ WHERE CPF = (
 
 --MODO 1:
 WITH RECURSIVE Hierarquia AS (
+    -- Começa por FLAVIO
     SELECT CPF, NOME, CPF_CHEFE, 1 AS NIVEL
     FROM FUNCIONARIO
-    WHERE CPF = '00000000001' -- FLAVIO
+    WHERE CPF = '00000000001'
     
     UNION ALL
     
+    -- Evita o loop infinito com a condição 'F.CPF != H.CPF'
     SELECT F.CPF, F.NOME, F.CPF_CHEFE, H.NIVEL + 1
     FROM FUNCIONARIO F
     JOIN Hierarquia H ON F.CPF_CHEFE = H.CPF
+    WHERE F.CPF != H.CPF
 )
 SELECT * FROM Hierarquia ORDER BY NIVEL;
 
