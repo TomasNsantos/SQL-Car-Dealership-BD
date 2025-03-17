@@ -139,7 +139,7 @@ EXECUTE FUNCTION verifica_valor_venda();
 
 -- Teste da Trigger
 INSERT INTO VENDA (CPF_CLIENTE, CPF_FUNC, CHASSI, DATA_COMPRA)
-VALUES ('11122233345', '44455566677', 'ABC123', CURRENT_DATE);
+VALUES ('11122233345', '44455566677', '9BD111060T5002170', CURRENT_DATE);
 
 -- 19. Função de Janela
 -- Classifica os funcionários pelo número de vendas
