@@ -1,4 +1,5 @@
 -- Criando tabelas no PostgreSQL
+-- Criando tabelas no PostgreSQL
 CREATE TABLE FUNCIONARIO ( 
     CPF VARCHAR(11) NOT NULL PRIMARY KEY, 
     RUA VARCHAR(25), 
@@ -79,6 +80,26 @@ CREATE TABLE ENTRADA (
     PRIMARY KEY (CPF_CLIENTE, CPF_FUNC, CHASSI, DATA_COMPRA, TIPO), 
     FOREIGN KEY (CPF_CLIENTE, CPF_FUNC, CHASSI, DATA_COMPRA) REFERENCES VENDA(CPF_CLIENTE, CPF_FUNC, CHASSI, DATA_COMPRA) 
 );
+
+-- Criando a trigger para impedir venda duplicada de carro finalizado
+CREATE OR REPLACE FUNCTION verifica_venda_carro()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 
+        FROM VENDA 
+        WHERE CHASSI = NEW.CHASSI AND STATUS = 'FINALIZADA'
+    ) THEN
+        RAISE EXCEPTION 'Erro: Este carro já foi vendido e a venda está finalizada!';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_venda_carro
+BEFORE INSERT ON VENDA
+FOR EACH ROW
+EXECUTE FUNCTION verifica_venda_carro();
 
 -- Inserindo dados no PostgreSQL
 INSERT INTO FUNCIONARIO (CPF, RUA, NUM, CEP, NOME, MAT) VALUES 
